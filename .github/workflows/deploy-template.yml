@@ -18,6 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
+      - name: Enforce tag-only deploys to prod
+        if: inputs.environment == 'prod' && github.ref_type != 'tag'
+        run: |
+          echo "::error::Only tags are allowed to deploy to prod. Received ref '${{ github.ref_name }}' of type '${{ github.ref_type }}'. Select a tag and try again."
+          exit 1
+
       - name: Check for changes since last release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
