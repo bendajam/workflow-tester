@@ -1,0 +1,55 @@
+name: Deploy (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment to deploy to (qa or prod)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  deployments: read
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Check for changes since last release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO="${{ github.repository }}"
+          ENVIRONMENT="${{ inputs.environment }}"
+          CURRENT_SHA="${{ github.sha }}"
+          DEPLOYMENTS=$(gh api "repos/$REPO/deployments?environment=$ENVIRONMENT&per_page=30" --jq '.[] | "\(.id) \(.sha)"')
+
+          LAST_SUCCESS_SHA=""
+          while read -r id sha; do
+            [ -z "$id" ] && continue
+            state=$(gh api "repos/$REPO/deployments/$id/statuses?per_page=1" --jq '.[0].state // empty')
+            if [ "$state" = "success" ]; then
+              LAST_SUCCESS_SHA="$sha"
+              break
+            fi
+          done <<< "$DEPLOYMENTS"
+
+          echo "Last successfully released sha to $ENVIRONMENT: ${LAST_SUCCESS_SHA:-none}"
+          echo "Requested sha: $CURRENT_SHA"
+
+          if [ "$LAST_SUCCESS_SHA" = "$CURRENT_SHA" ]; then
+            echo "::error::$CURRENT_SHA is already released to $ENVIRONMENT. Nothing to deploy."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: echo "Building ${{ github.ref }} (${{ github.sha }}) for ${{ inputs.environment }}"
+
+      - name: Deploy
+        run: echo "Deploying ${{ github.ref }} (${{ github.sha }}) to ${{ inputs.environment }} environment"
