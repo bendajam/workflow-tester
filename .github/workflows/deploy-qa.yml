@@ -4,6 +4,10 @@ run-name: Deploy to QA - ${{ github.ref_name }}
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  deployments: read
+
 jobs:
   deploy:
     uses: ./.github/workflows/deploy-template.yml
