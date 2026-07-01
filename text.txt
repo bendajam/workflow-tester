@@ -1,3 +1,4 @@
 line 1: initial content
 line 2: added a feature note
 line 3: tweak wording
+line 4: bugfix note
