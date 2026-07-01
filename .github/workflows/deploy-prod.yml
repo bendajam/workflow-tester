@@ -2,11 +2,6 @@ name: Deploy to Prod
 
 on:
   workflow_dispatch:
-    inputs:
-      ref:
-        description: "Branch, tag, or SHA to deploy"
-        required: false
-        default: main
 
 jobs:
   deploy:
@@ -16,11 +11,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
 
       - name: Build
-        run: echo "Building ${{ inputs.ref }} for prod"
+        run: echo "Building ${{ github.ref }} (${{ github.sha }}) for prod"
 
       - name: Deploy to prod
-        run: echo "Deploying ${{ inputs.ref }} to prod environment"
+        run: echo "Deploying ${{ github.ref }} (${{ github.sha }}) to prod environment"
